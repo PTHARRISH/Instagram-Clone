@@ -3,7 +3,7 @@ import re
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from api.models import User
+from api.models import Profile, User
 
 
 class RegisterSerializer(ModelSerializer):
@@ -103,3 +103,28 @@ class LoginSerializer(serializers.Serializer):
         if not value or not value.strip():
             raise serializers.ValidationError("Password is required.")
         return value
+
+
+class ProfileSerializer(ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ["user", "bio", "avatar", "gender", "website", "is_private"]
+        extra_kwargs = {
+            "user": {"read_only": True},
+        }
+
+    def validate(self, attrs):
+        bio = attrs.get("bio", "")
+        if bio and len(bio) > 250:
+            raise serializers.ValidationError("Bio cannot exceed 250 characters.")
+        if website := attrs.get("website", ""):
+            url_regex = re.compile(
+                r"^(https?:\/\/)?"  # optional http or https scheme
+                r"((([a-zA-Z0-9\-_]+\.)+[a-zA-Z]{2,})|"  # domain...
+                r"localhost|"  # localhost...
+                r"(\d{1,3}\.){3}\d{1,3})"  # ...or ipv4
+                r"(:\d+)?(\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;%=]*)?$"  # optional port and path
+            )
+            if not re.match(url_regex, website):
+                raise serializers.ValidationError("Enter a valid URL for the website.")
+        return attrs

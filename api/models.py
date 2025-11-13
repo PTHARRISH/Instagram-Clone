@@ -1,8 +1,7 @@
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-User = get_user_model()
 # ---------- Base mixins ----------
 
 
@@ -25,14 +24,13 @@ class User(AbstractUser):
     """
 
     full_name = models.CharField(
-        max_length=30, null=False, blank=False, verbose_name="Full Name"
+        max_length=150, null=False, blank=False, verbose_name="Full Name"
     )
-    mobile = models.DecimalField(
-        max_digits=10,
-        decimal_places=0,
+    mobile = models.CharField(
+        max_length=15,
         unique=True,
-        blank=False,
         null=False,
+        blank=False,
         verbose_name="Mobile Number",
     )
 
@@ -53,7 +51,9 @@ GENDER_CHOICES = [
 
 
 class Profile(TimeStampedModel):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
+    )
     bio = models.TextField(max_length=250, blank=True, null=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     gender = models.CharField(
@@ -85,10 +85,10 @@ class FollowList(TimeStampedModel):
     """
 
     follower = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="following_set"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="following_set"
     )
     following = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="follower_set"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="follower_set"
     )
 
     class Meta:

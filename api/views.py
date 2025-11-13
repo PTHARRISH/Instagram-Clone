@@ -1,14 +1,18 @@
 from decimal import Decimal, InvalidOperation
 
+from django.contrib.auth import get_user_model
+from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
+from django.http import JsonResponse
 from rest_framework import status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from api.models import User
-from api.serializers import LoginSerializer, RegisterSerializer
+from api.models import Profile, User
+from api.serializers import LoginSerializer, ProfileSerializer, RegisterSerializer
 
 
 class RegisterView(APIView):
@@ -93,8 +97,36 @@ class LoginView(APIView):
         )
 
 
+# =============== Profile Views ===============
 
 
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProfileSerializer
+    parser_classes = [
+        JSONParser,
+        MultiPartParser,
+        FormParser,
+    ]
+
+    def get(self, request):
+        profile = Profile.objects.filter(user=request.user).first()
+        if profile is None:
+            profile = Profile.objects.create(user=request.user)
+        serializer = self.serializer_class(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        profile = Profile.objects.filter(user=request.user).first()
+        if profile is None:
+            profile = Profile.objects.create(user=request.user)
+        serializer = self.serializer_class(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ======================== Logout View ========================
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -128,3 +160,31 @@ class LogoutView(APIView):
                 {"error": f"An error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+# ===================== Delete Account View =====================
+
+
+signer = TimestampSigner()
+
+
+class DeleteAccountView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        token = request.GET.get("token")
+        if not token:
+            return JsonResponse({"error": "Token required"}, status=400)
+
+        try:
+            # Verify and check expiration (max_age in seconds = 24h)
+            unsigned = signer.unsign(token, max_age=86400)
+            user = get_user_model().objects.get(pk=unsigned)
+        except SignatureExpired:
+            return JsonResponse({"error": "Link expired"}, status=400)
+        except (BadSignature, get_user_model().DoesNotExist):
+            return JsonResponse({"error": "Invalid link"}, status=400)
+
+        # Delete user and profile
+        user.delete()
+        return JsonResponse({"message": "Account deleted successfully."}, status=200)
