@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib.auth import get_user_model
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,6 +13,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.models import Profile, User
+from api.permissions import IsOwnerOrReadOnly
 from api.serializers import LoginSerializer, ProfileSerializer, RegisterSerializer
 
 
@@ -101,7 +103,7 @@ class LoginView(APIView):
 
 
 class ProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     serializer_class = ProfileSerializer
     parser_classes = [
         JSONParser,
@@ -109,17 +111,18 @@ class ProfileView(APIView):
         FormParser,
     ]
 
-    def get(self, request):
-        profile = Profile.objects.filter(user=request.user).first()
-        if profile is None:
-            profile = Profile.objects.create(user=request.user)
-        serializer = self.serializer_class(profile)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, request, username):
+        profile = get_object_or_404(
+            Profile.objects.select_related("user"), user__username=username
+        )
+        self.check_object_permissions(request, profile)
+        data = self.serializer_class(profile).data
+        data["is_owner"] = profile.user == request.user
+        return Response(data, status=status.HTTP_200_OK)
 
-    def patch(self, request):
-        profile = Profile.objects.filter(user=request.user).first()
-        if profile is None:
-            profile = Profile.objects.create(user=request.user)
+    def patch(self, request, username):
+        profile = get_object_or_404(Profile, user__username=username)
+        self.check_object_permissions(request, profile)
         serializer = self.serializer_class(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
