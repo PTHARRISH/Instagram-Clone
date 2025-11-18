@@ -2,6 +2,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth import get_user_model
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -118,6 +119,18 @@ class ProfileView(APIView):
         self.check_object_permissions(request, profile)
         data = self.serializer_class(profile).data
         data["is_owner"] = profile.user == request.user
+        # Using View-level annotation to get followers and following counts
+        profile = (
+            Profile.objects.select_related("user")
+            .annotate(
+                followers_count=Count("user__follower_set"),
+                following_count=Count("user__following_set"),
+            )
+            .filter(user__username=username)
+            .first()
+        )
+        data["followers_count"] = profile.followers_count
+        data["following_count"] = profile.following_count
         return Response(data, status=status.HTTP_200_OK)
 
     def patch(self, request, username):

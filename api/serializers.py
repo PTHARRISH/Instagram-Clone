@@ -3,7 +3,7 @@ import re
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from api.models import Profile, User
+from api.models import FollowList, Profile, User
 
 
 class RegisterSerializer(ModelSerializer):
@@ -106,9 +106,23 @@ class LoginSerializer(serializers.Serializer):
 
 
 class ProfileSerializer(ModelSerializer):
+    # followers_count = serializers.SerializerMethodField()
+    # following_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
-        fields = ["user", "bio", "avatar", "gender", "website", "is_private"]
+        fields = [
+            "user",
+            "bio",
+            "avatar",
+            "gender",
+            "website",
+            "is_private",
+            "followers",
+            "following",
+            # "followers_count",
+            # "following_count",
+        ]
         extra_kwargs = {
             "user": {"read_only": True},
         }
@@ -128,3 +142,9 @@ class ProfileSerializer(ModelSerializer):
             if not re.match(url_regex, website):
                 raise serializers.ValidationError("Enter a valid URL for the website.")
         return attrs
+
+    def get_followers_count(self, obj):
+        return FollowList.objects.filter(following=obj.user).count()
+
+    def get_following_count(self, obj):
+        return FollowList.objects.filter(follower=obj.user).count()
