@@ -3,7 +3,7 @@ import re
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from api.models import FollowList, Profile, User
+from api.models import Profile, User
 
 
 class RegisterSerializer(ModelSerializer):
@@ -118,8 +118,6 @@ class ProfileSerializer(ModelSerializer):
             "gender",
             "website",
             "is_private",
-            "followers",
-            "following",
             # "followers_count",
             # "following_count",
         ]
@@ -143,8 +141,53 @@ class ProfileSerializer(ModelSerializer):
                 raise serializers.ValidationError("Enter a valid URL for the website.")
         return attrs
 
-    def get_followers_count(self, obj):
-        return FollowList.objects.filter(following=obj.user).count()
+    # def get_followers_count(self, obj):
+    #     return FollowList.objects.filter(following=obj.user).count()
 
-    def get_following_count(self, obj):
-        return FollowList.objects.filter(follower=obj.user).count()
+    # def get_following_count(self, obj):
+    #     return FollowList.objects.filter(follower=obj.user).count()
+
+
+class UserPublicSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["id", "username", "full_name", "avatar"]
+
+    def get_avatar(self, obj):
+        return (
+            obj.profile.avatar.url
+            if hasattr(obj, "profile") and obj.profile.avatar
+            else None
+        )
+
+
+class FollowerSerializer(serializers.Serializer):
+    id = serializers.IntegerField(source="follower.id")
+    username = serializers.CharField(source="follower.username")
+    full_name = serializers.CharField(source="follower.full_name")
+    avatar = serializers.SerializerMethodField()
+    profile_url = serializers.SerializerMethodField()
+
+    def get_avatar(self, obj):
+        profile = obj.follower.profile
+        return profile.avatar.url if profile.avatar else None
+
+    def get_profile_url(self, obj):
+        return f"/profiles/{obj.follower.username}/"
+
+
+class FollowingSerializer(serializers.Serializer):
+    id = serializers.IntegerField(source="following.id")
+    username = serializers.CharField(source="following.username")
+    full_name = serializers.CharField(source="following.full_name")
+    avatar = serializers.SerializerMethodField()
+    profile_url = serializers.SerializerMethodField()
+
+    def get_avatar(self, obj):
+        profile = obj.following.profile
+        return profile.avatar.url if profile.avatar else None
+
+    def get_profile_url(self, obj):
+        return f"/profiles/{obj.following.username}/"
