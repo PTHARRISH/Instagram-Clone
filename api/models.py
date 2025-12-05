@@ -103,3 +103,26 @@ class FollowList(TimeStampedModel):
 
     def __str__(self):
         return f"{self.follower.username} follows {self.following.username}"
+
+
+class FollowRequest(TimeStampedModel):
+    from_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="sent_follow_requests",
+    )
+    to_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="received_follow_requests",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["from_user", "to_user"], name="unique_follow_request"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.from_user.username} requested to follow {self.to_user.username}"

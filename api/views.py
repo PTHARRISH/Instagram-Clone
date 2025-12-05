@@ -2,7 +2,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth import get_user_model
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -13,9 +13,15 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from api.models import Profile, User
+from api.models import FollowList, FollowRequest, Profile, User
+from api.pagination import DefaultPagination
 from api.permissions import IsOwnerOrReadOnly
-from api.serializers import LoginSerializer, ProfileSerializer, RegisterSerializer
+from api.serializers import (
+    FollowerSerializer,
+    LoginSerializer,
+    ProfileSerializer,
+    RegisterSerializer,
+)
 
 
 class RegisterView(APIView):
@@ -140,6 +146,145 @@ class ProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ===================== Followers View =====================
+
+
+class FollowersView(APIView):
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    pagination_class = DefaultPagination
+
+    def get(self, request, username):
+        profile = get_object_or_404(Profile, user__username=username)
+        search = request.GET.get("search", "")
+        queryset = (
+            FollowList.objects.filter(following=profile.user)
+            .select_related("follower__profile")
+            .order_by("-created_at")
+        )
+        if search:
+            queryset = queryset.filter(
+                Q(follower__username__icontains=search)
+                | Q(follower__full_name__icontains=search)
+            )
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = FollowerSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    def delete(self, request, username):
+        profile = get_object_or_404(Profile, user__username=username)
+        self.check_object_permissions(request, profile)
+        follower_id = request.data.get("user_id")
+        if not follower_id:
+            return Response({"detail": "user_id is required"}, status=400)
+        try:
+            follow = FollowList.objects.get(
+                follower_id=follower_id, following=profile.user
+            )
+            follow.delete()
+            return Response({"detail": "Follower removed"}, status=204)
+        except FollowList.DoesNotExist:
+            return Response({"detail": "User is not a follower"}, status=404)
+
+
+class FollowingView(APIView):
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    pagination_class = DefaultPagination
+
+    def get(self, request, username):
+        profile = get_object_or_404(Profile, user__username=username)
+
+        search = request.GET.get("search", "")
+        queryset = (
+            FollowList.objects.filter(follower=profile.user)
+            .select_related("following__profile")
+            .order_by("-created_at")
+        )
+        if search:
+            queryset = queryset.filter(
+                Q(following__username__icontains=search)
+                | Q(following__full_name__icontains=search)
+            )
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = FollowingSerializer(page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+    def delete(self, request, username):
+        profile = get_object_or_404(Profile, user__username=username)
+        self.check_object_permissions(request, profile)
+        following_id = request.data.get("user_id")
+        if not following_id:
+            return Response({"detail": "user_id is required"}, status=400)
+
+        try:
+            follow = FollowList.objects.get(
+                follower=profile.user, following_id=following_id
+            )
+            follow.delete()
+            return Response({"detail": "Unfollowed successfully"}, status=204)
+
+        except FollowList.DoesNotExist:
+            return Response({"detail": "You are not following this user"}, status=404)
+
+
+class FollowActionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, username):
+        target_user = get_object_or_404(User, username=username)
+        if request.user == target_user:
+            return Response({"detail": "You cannot follow yourself."}, status=400)
+        if FollowList.objects.filter(
+            follower=request.user, following=target_user
+        ).exists():
+            return Response({"detail": "Already following."}, status=400)
+        if not target_user.profile.is_private:
+            FollowList.objects.create(follower=request.user, following=target_user)
+            return Response({"detail": "Followed successfully."}, status=201)
+        follow_request, created = FollowRequest.objects.get_or_create(
+            from_user=request.user, to_user=target_user
+        )
+        if not created:
+            return Response({"detail": "Follow request already sent."}, status=400)
+
+        return Response({"detail": "Follow request sent."}, status=201)
+
+    def delete(self, request, username):
+        target_user = get_object_or_404(User, username=username)
+        try:
+            req = FollowRequest.objects.get(from_user=request.user, to_user=target_user)
+            req.delete()
+            return Response({"detail": "Follow request cancelled."}, status=204)
+        except FollowRequest.DoesNotExist:
+            return Response({"detail": "No follow request found."}, status=404)
+
+
+class FollowRequestRespondView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, request_id):
+        follow_request = get_object_or_404(FollowRequest, id=request_id)
+
+        if follow_request.to_user != request.user:
+            return Response({"detail": "Not allowed."}, status=403)
+        FollowList.objects.create(
+            follower=follow_request.from_user, following=follow_request.to_user
+        )
+
+        follow_request.delete()
+        return Response({"detail": "Follow request accepted."}, status=201)
+
+    def delete(self, request, request_id):
+        follow_request = get_object_or_404(FollowRequest, id=request_id)
+        if follow_request.to_user != request.user:
+            return Response({"detail": "Not allowed."}, status=403)
+        follow_request.delete()
+        return Response({"detail": "Follow request rejected."}, status=204)
 
 
 # ======================== Logout View ========================

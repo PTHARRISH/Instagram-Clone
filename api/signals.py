@@ -19,16 +19,16 @@ def create_profile_and_send_email(sender, instance, created, **kwargs):
     - Sends verification email with a 24-hour deletion link.
     """
     if created:
-        # 1️⃣ Create the profile (safe even if mail fails)
+        # Create the profile (safe even if mail fails)
         Profile.objects.get_or_create(user=instance)
 
-        # 2️⃣ Generate a signed token for deletion link
+        # Generate a signed token for deletion link
         token = signer.sign(instance.pk)  # securely signs user ID with timestamp
 
-        # 3️⃣ Build delete URL
+        # Build delete URL
         delete_url = f"http://127.0.0.1:8000/api/delete-account/?token={token}"
 
-        # 4️⃣ Send confirmation mail
+        # Send confirmation mail
         try:
             send_mail(
                 subject="Welcome to Our Instagram App 🎉",
