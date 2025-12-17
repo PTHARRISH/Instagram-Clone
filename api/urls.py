@@ -1,6 +1,7 @@
 from django.urls import path
 
 from api.views import (
+    AssignUserPermissionView,
     DeleteAccountView,
     FollowActionView,
     FollowersView,
@@ -15,6 +16,11 @@ from api.views import (
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
+    path(
+        "admin/assign-permission/",
+        AssignUserPermissionView.as_view(),
+        name="assign-permission",
+    ),
     path("profiles/<str:username>/", ProfileView.as_view(), name="profile-detail"),
     path(
         "profiles/<str:username>/followers/", FollowersView.as_view(), name="followers"

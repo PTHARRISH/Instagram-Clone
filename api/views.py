@@ -7,17 +7,27 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from api.models import FollowList, FollowRequest, Profile, User
+from api.models import (
+    FollowList,
+    FollowRequest,
+    PagePermission,
+    Profile,
+    Role,
+    User,
+    UserPermission,
+)
 from api.pagination import DefaultPagination
-from api.permissions import IsOwnerOrReadOnly
+from api.permissions import DynamicPagePermission
 from api.serializers import (
+    AssignPermissionSerializer,
     FollowerSerializer,
+    FollowingSerializer,
     LoginSerializer,
     ProfileSerializer,
     RegisterSerializer,
@@ -47,17 +57,6 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
-
-        # Debug logging - this will show in Django terminal
-        print("=" * 50)
-        print("[LOGIN REQUEST] Received POST request!")
-        print(f"[LOGIN REQUEST] IP: {request.META.get('REMOTE_ADDR', 'Unknown')}")
-        print(f"[LOGIN REQUEST] Path: {request.path}")
-        print(f"[LOGIN REQUEST] Method: {request.method}")
-        print(f"[LOGIN REQUEST] Content-Type: {request.content_type}")
-        print(f"[LOGIN REQUEST] Data: {dict(request.data)}")
-        print("=" * 50)
-
         identifier = serializer.validated_data.get("identifier")
         password = serializer.validated_data.get("password")
 
@@ -110,7 +109,7 @@ class LoginView(APIView):
 
 
 class ProfileView(APIView):
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, DynamicPagePermission]
     serializer_class = ProfileSerializer
     parser_classes = [
         JSONParser,
@@ -152,7 +151,7 @@ class ProfileView(APIView):
 
 
 class FollowersView(APIView):
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, DynamicPagePermission]
     pagination_class = DefaultPagination
 
     def get(self, request, username):
@@ -190,7 +189,7 @@ class FollowersView(APIView):
 
 
 class FollowingView(APIView):
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, DynamicPagePermission]
     pagination_class = DefaultPagination
 
     def get(self, request, username):
@@ -285,6 +284,37 @@ class FollowRequestRespondView(APIView):
             return Response({"detail": "Not allowed."}, status=403)
         follow_request.delete()
         return Response({"detail": "Follow request rejected."}, status=204)
+
+
+class AssignUserPermissionView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        serializer = AssignPermissionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.get(id=serializer.validated_data["user_id"])
+        role = Role.objects.get(id=serializer.validated_data["role_id"])
+        url_name = serializer.validated_data["url_name"]
+        permission_level = serializer.validated_data["permission_level"]
+
+        # Create/find PagePermission
+        page_perm, created = PagePermission.objects.get_or_create(
+            url_name=url_name, permission_level=permission_level
+        )
+
+        # Create/find UserPermission and link
+        user_perm, created = UserPermission.objects.get_or_create(user=user, role=role)
+        user_perm.page_permissions.add(page_perm)
+
+        return Response(
+            {
+                "message": f"Permission {permission_level} for {url_name} assigned to {user.username}",
+                "created": created,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 # ======================== Logout View ========================
