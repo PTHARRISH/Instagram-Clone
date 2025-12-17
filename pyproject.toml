@@ -11,6 +11,64 @@ dependencies = [
     "djangorestframework>=3.16.1",
     "djangorestframework-simplejwt>=5.5.1",
     "pillow>=12.0.0",
+    "pre-commit>=4.5.1",
     "psycopg2-binary==2.9.11",
     "python-decouple>=3.8",
 ]
+
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.4.0",
+    "ruff>=0.14.5",
+]
+
+# ===============================
+# BLACK (FORMATTER ONLY)
+# ===============================
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+# ===============================
+# RUFF - LINT + AUTOFIX
+# ===============================
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+exclude = ["migrations", ".venv", "env"]
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "D", "UP", "B", "DJ"]
+ignore = [
+    "D100", 
+    "D101", 
+    "D102", 
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "D203",
+    "D212",
+]
+
+# ===============================
+# RUFF FORMAT CONFIG
+# ===============================
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+# ===============================
+# RUFF ISORT (IMPORT MANAGEMENT)
+# ===============================
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-single-line = false
+known-first-party = ["backend", "api", "easyaudit"]
+
+
+
