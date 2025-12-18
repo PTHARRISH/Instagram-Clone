@@ -6,18 +6,11 @@ from django.dispatch import receiver
 
 from api.models import Profile
 
-from .models import Profile
-
 signer = TimestampSigner()
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_profile_and_send_email(sender, instance, created, **kwargs):
-    """
-    Triggered when a user is created.
-    - Creates a Profile.
-    - Sends verification email with a 24-hour deletion link.
-    """
     if created:
         # Create the profile (safe even if mail fails)
         Profile.objects.get_or_create(user=instance)

@@ -19,6 +19,7 @@ class TimeStampedModel(models.Model):
 class User(AbstractUser):
     """
     Custom User model extending AbstractUser.
+
     AbstractUser already includes: username, email, password, is_staff, is_superuser, etc.
     We just add our custom fields here.
     """
@@ -54,12 +55,10 @@ class Profile(TimeStampedModel):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
     )
-    bio = models.TextField(max_length=250, blank=True, null=True)
-    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
-    gender = models.CharField(
-        max_length=12, choices=GENDER_CHOICES, null=True, blank=True
-    )
-    website = models.URLField(blank=True, null=True)
+    bio = models.TextField(max_length=250, blank=True)
+    avatar = models.ImageField(upload_to="avatars/", blank=True)
+    gender = models.CharField(max_length=12, choices=GENDER_CHOICES, blank=True)
+    website = models.URLField(blank=True)
     is_private = models.BooleanField(default=False)
 
     def __str__(self):
@@ -81,9 +80,8 @@ class FollowList(TimeStampedModel):
     """Using ManyToManyField would make it difficult to enforce unique constraints
     and to query the relationships efficiently."""
     """Also, with this model we can easily extend it in the future to add more fields
-    like 'since when' the follow happened, notifications, etc.      
+    like 'since when' the follow happened, notifications, etc.
     """
-
     follower = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="following_set"
     )
@@ -128,7 +126,6 @@ class FollowRequest(TimeStampedModel):
         return f"{self.from_user.username} requested to follow {self.to_user.username}"
 
 
-
 class Role(models.Model):
     name = models.CharField(max_length=50, unique=True)
 
@@ -138,17 +135,17 @@ class Role(models.Model):
 
 class PagePermission(models.Model):
     PERMISSION_CHOICES = [
-        ('view', 'View Only'),
-        ('edit', 'Edit'),
-        ('delete', 'Delete'),
-        ('full', 'Full Access'),
+        ("view", "View Only"),
+        ("edit", "Edit"),
+        ("delete", "Delete"),
+        ("full", "Full Access"),
     ]
 
     url_name = models.CharField(max_length=100)
     permission_level = models.CharField(max_length=10, choices=PERMISSION_CHOICES)
 
     class Meta:
-        unique_together = ['url_name', 'permission_level']
+        unique_together = ["url_name", "permission_level"]
 
     def __str__(self):
         return f"{self.url_name} - {self.permission_level}"
@@ -156,13 +153,19 @@ class PagePermission(models.Model):
 
 class UserPermission(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="rbac_permissions"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="rbac_permissions",
     )
-    role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name="user_permissions")
-    page_permissions = models.ManyToManyField(PagePermission, related_name="user_permissions")
+    role = models.ForeignKey(
+        Role, on_delete=models.CASCADE, related_name="user_permissions"
+    )
+    page_permissions = models.ManyToManyField(
+        PagePermission, related_name="user_permissions"
+    )
 
     class Meta:
-        unique_together = ['user', 'role']
+        unique_together = ["user", "role"]
 
     def __str__(self):
         return f"{self.user.username} - {self.role.name}"

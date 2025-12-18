@@ -147,7 +147,8 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": "django.contrib.auth.password_validation."
+        "UserAttributeSimilarityValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -161,7 +162,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_USE_TLS = True
 EMAIL_PORT = config("EMAIL_PORT")
@@ -229,47 +230,43 @@ SIMPLE_JWT = {
 }
 
 
-
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-
-    'formatters': {
-        'simple': {
-            'format': '[{levelname}] {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "[{levelname}] {message}",
+            "style": "{",
         },
-        'verbose': {
-            'format': '[{asctime}] [{levelname}] {name}: {message}',
-            'datefmt': '%Y-%m-%d %H:%M:%S',
-            'style': '{',
-        },
-    },
-
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'django.log'),
-            'formatter': 'verbose',
+        "verbose": {
+            "format": "[{asctime}] [{levelname}] {name}: {message}",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+            "style": "{",
         },
     },
-
-    'loggers': {
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "django.log"),
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
         # Django's own logs (requests, system)
-        'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': True,
+        "django": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": True,
         },
         # Your project/app logs (use logger = logging.getLogger(__name__))
-        'project': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
+        "project": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
         },
     },
-}}
+}

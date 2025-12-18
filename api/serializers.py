@@ -61,7 +61,8 @@ class RegisterSerializer(ModelSerializer):
             )
         if not re.search(r"[a-zA-Z0-9_.+-]", value):
             raise serializers.ValidationError(
-                "Password must contain at least one letter, digit, or special character."
+                "Password must contain at least one letter, "
+                "digit, or special character."
             )
         return value
 
@@ -72,7 +73,8 @@ class RegisterSerializer(ModelSerializer):
             )
         if not re.search(r"[a-zA-Z0-9_.+-]", value):
             raise serializers.ValidationError(
-                "Confirm Password must contain at least one letter, digit, or special character."
+                "Confirm Password must contain at least one letter, "
+                "digit, or special character."
             )
         if password := self.initial_data.get("password"):
             if value != password:
