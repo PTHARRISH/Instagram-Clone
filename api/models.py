@@ -57,7 +57,12 @@ class Profile(TimeStampedModel):
     )
     bio = models.TextField(max_length=250, blank=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True)
-    gender = models.CharField(max_length=12, choices=GENDER_CHOICES, blank=True)
+    gender = models.CharField(
+        max_length=12,
+        choices=GENDER_CHOICES,
+        blank=True,
+        default="unspecified",
+    )
     website = models.URLField(blank=True)
     is_private = models.BooleanField(default=False)
 
