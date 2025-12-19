@@ -3,7 +3,16 @@ import re
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from api.models import PagePermission, Profile, Role, User
+from api.models import (
+    BlockedUser,
+    CloseFriend,
+    MutedUser,
+    PagePermission,
+    Profile,
+    Role,
+    User,
+    UserSettings,
+)
 
 
 class RegisterSerializer(ModelSerializer):
@@ -212,3 +221,52 @@ class AssignPermissionSerializer(serializers.Serializer):
         if not Role.objects.filter(id=value).exists():
             raise serializers.ValidationError("Role not found")
         return value
+
+
+# ---------- Blocking ----------
+
+
+class BlockedUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlockedUser
+        fields = ["id", "blocked", "created_at"]
+        read_only_fields = ["blocker"]
+
+
+# ---------- Muting ----------
+
+
+class MutedUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MutedUser
+        fields = [
+            "id",
+            "muted_user",
+            "mute_posts",
+            "mute_stories",
+            "created_at",
+        ]
+        read_only_fields = ["user"]
+
+
+# ---------- Close Friends ----------
+
+
+class CloseFriendSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CloseFriend
+        fields = ["id", "friend", "created_at"]
+        read_only_fields = ["user"]
+
+
+# ---------- User Settings ----------
+
+
+class UserSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSettings
+        fields = [
+            "allow_messages_from_followers",
+            "show_activity_status",
+            "allow_mentions",
+        ]

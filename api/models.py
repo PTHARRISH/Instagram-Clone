@@ -51,6 +51,9 @@ GENDER_CHOICES = [
 ]
 
 
+# ---------- Profile Model ----------
+
+
 class Profile(TimeStampedModel):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
@@ -68,6 +71,9 @@ class Profile(TimeStampedModel):
 
     def __str__(self):
         return f"Profile of {self.user.username}"
+
+
+# ---------- Following & Followers ----------
 
 
 class FollowList(TimeStampedModel):
@@ -129,6 +135,76 @@ class FollowRequest(TimeStampedModel):
 
     def __str__(self):
         return f"{self.from_user.username} requested to follow {self.to_user.username}"
+
+
+# ---------- Blocking & Muting ----------
+
+
+class BlockedUser(TimeStampedModel):
+    blocker = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="blocked_users"
+    )
+    blocked = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="blocked_by"
+    )
+
+    class Meta:
+        unique_together = ["blocker", "blocked"]
+
+    def __str__(self):
+        return f"{self.blocker.username} blocked {self.blocked.username}"
+
+
+class MutedUser(TimeStampedModel):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="muted_users"
+    )
+    muted_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="muted_by"
+    )
+    mute_posts = models.BooleanField(default=True)
+    mute_stories = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.user.username} muted {self.muted_user.username}"
+
+
+# ---------- Close Friends ----------
+
+
+class CloseFriend(TimeStampedModel):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="close_friends"
+    )
+    friend = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="close_friend_of",
+    )
+
+    class Meta:
+        unique_together = ["user", "friend"]
+
+    def __str__(self):
+        return f"{self.user.username} added {self.friend.username} as a close friend"
+
+
+# ---------- User Settings ----------
+
+
+class UserSettings(TimeStampedModel):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="settings"
+    )
+    allow_messages_from_followers = models.BooleanField(default=True)
+    show_activity_status = models.BooleanField(default=True)
+    allow_mentions = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Settings for {self.user.username}"
+
+
+# ---------- RBAC Models ----------
 
 
 class Role(models.Model):

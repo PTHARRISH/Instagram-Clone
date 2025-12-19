@@ -1,7 +1,7 @@
 from django.urls import resolve
 from rest_framework.permissions import BasePermission
 
-from .models import UserPermission
+from api.models import UserPermission
 
 
 class DynamicPagePermission(BasePermission):
