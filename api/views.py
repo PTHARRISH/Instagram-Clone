@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
@@ -27,7 +27,6 @@ from api.models import (
     UserSettings,
 )
 from api.pagination import DefaultPagination
-from api.permissions import DynamicPagePermission
 from api.serializers import (
     AssignPermissionSerializer,
     FollowerSerializer,
@@ -115,7 +114,6 @@ class LoginView(APIView):
 
 
 class ProfileView(APIView):
-    permission_classes = [IsAuthenticated, DynamicPagePermission]
     serializer_class = ProfileSerializer
     parser_classes = [
         JSONParser,
@@ -157,7 +155,6 @@ class ProfileView(APIView):
 
 
 class FollowersView(APIView):
-    permission_classes = [IsAuthenticated, DynamicPagePermission]
     pagination_class = DefaultPagination
 
     def get(self, request, username):
@@ -195,7 +192,6 @@ class FollowersView(APIView):
 
 
 class FollowingView(APIView):
-    permission_classes = [IsAuthenticated, DynamicPagePermission]
     pagination_class = DefaultPagination
 
     def get(self, request, username):
@@ -238,8 +234,6 @@ class FollowingView(APIView):
 
 
 class FollowActionView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request, username):
         target_user = get_object_or_404(User, username=username)
         if request.user == target_user:
@@ -270,8 +264,6 @@ class FollowActionView(APIView):
 
 
 class FollowRequestRespondView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request, request_id):
         follow_request = get_object_or_404(FollowRequest, id=request_id)
 
@@ -325,8 +317,6 @@ class AssignUserPermissionView(APIView):
 
 # ======================= Block User View =======================
 class BlockUserView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request, user_id):
         BlockedUser.objects.get_or_create(blocker=request.user, blocked_id=user_id)
         return Response({"detail": "User blocked"}, status=201)
@@ -338,8 +328,6 @@ class BlockUserView(APIView):
 
 # ======================= Mute User View =======================
 class MuteUserView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request, user_id):
         MutedUser.objects.get_or_create(user=request.user, muted_user_id=user_id)
         return Response({"detail": "User muted"}, status=201)
@@ -351,8 +339,6 @@ class MuteUserView(APIView):
 
 # ======================= Close Friends View =======================
 class CloseFriendView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request, user_id):
         CloseFriend.objects.get_or_create(user=request.user, friend_id=user_id)
         return Response({"detail": "Added to close friends"}, status=201)
@@ -366,8 +352,6 @@ class CloseFriendView(APIView):
 
 
 class UserSettingsView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def get(self, request):
         settings_obj, _ = UserSettings.objects.get_or_create(user=request.user)
         serializer = UserSettingsSerializer(settings_obj)
@@ -385,8 +369,6 @@ class UserSettingsView(APIView):
 
 # ======================== Logout View ========================
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request):
         try:
             refresh_token = request.data.get("refresh")
