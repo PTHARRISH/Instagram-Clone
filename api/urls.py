@@ -2,6 +2,8 @@ from django.urls import path
 
 from api.views import (
     AssignUserPermissionView,
+    BlockUserView,
+    CloseFriendView,
     DeleteAccountView,
     FollowActionView,
     FollowersView,
@@ -9,8 +11,10 @@ from api.views import (
     FollowRequestRespondView,
     LoginView,
     LogoutView,
+    MuteUserView,
     ProfileView,
     RegisterView,
+    UserSettingsView,
 )
 
 urlpatterns = [
@@ -38,6 +42,10 @@ urlpatterns = [
         FollowRequestRespondView.as_view(),
         name="follow-request-response",
     ),
+    path("block/<int:user_id>/", BlockUserView.as_view()),
+    path("mute/<int:user_id>/", MuteUserView.as_view()),
+    path("close-friends/<int:user_id>/", CloseFriendView.as_view()),
+    path("settings/", UserSettingsView.as_view()),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("delete-account/", DeleteAccountView.as_view(), name="delete-account"),
 ]
