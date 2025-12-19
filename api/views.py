@@ -14,13 +14,17 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.models import (
+    BlockedUser,
+    CloseFriend,
     FollowList,
     FollowRequest,
+    MutedUser,
     PagePermission,
     Profile,
     Role,
     User,
     UserPermission,
+    UserSettings,
 )
 from api.pagination import DefaultPagination
 from api.permissions import DynamicPagePermission
@@ -31,9 +35,11 @@ from api.serializers import (
     LoginSerializer,
     ProfileSerializer,
     RegisterSerializer,
+    UserSettingsSerializer,
 )
 
 
+# ===================== Auth Views =====================
 class RegisterView(APIView):
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
@@ -315,6 +321,66 @@ class AssignUserPermissionView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+# ======================= Block User View =======================
+class BlockUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        BlockedUser.objects.get_or_create(blocker=request.user, blocked_id=user_id)
+        return Response({"detail": "User blocked"}, status=201)
+
+    def delete(self, request, user_id):
+        BlockedUser.objects.filter(blocker=request.user, blocked_id=user_id).delete()
+        return Response({"detail": "User unblocked"}, status=204)
+
+
+# ======================= Mute User View =======================
+class MuteUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        MutedUser.objects.get_or_create(user=request.user, muted_user_id=user_id)
+        return Response({"detail": "User muted"}, status=201)
+
+    def delete(self, request, user_id):
+        MutedUser.objects.filter(user=request.user, muted_user_id=user_id).delete()
+        return Response({"detail": "User unmuted"}, status=204)
+
+
+# ======================= Close Friends View =======================
+class CloseFriendView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        CloseFriend.objects.get_or_create(user=request.user, friend_id=user_id)
+        return Response({"detail": "Added to close friends"}, status=201)
+
+    def delete(self, request, user_id):
+        CloseFriend.objects.filter(user=request.user, friend_id=user_id).delete()
+        return Response({"detail": "Removed from close friends"}, status=204)
+
+
+# ======================= User Settings View ========================
+
+
+class UserSettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        settings_obj, _ = UserSettings.objects.get_or_create(user=request.user)
+        serializer = UserSettingsSerializer(settings_obj)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        settings_obj, _ = UserSettings.objects.get_or_create(user=request.user)
+        serializer = UserSettingsSerializer(
+            settings_obj, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 # ======================== Logout View ========================
