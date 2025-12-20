@@ -1,4 +1,4 @@
-# Instagram-like User Microservice
+# Instagram Clone
 
 A Django REST Framework microservice that handles all user-related functionalities similar to Instagram, including authentication, profiles, followers/following, blocking/muting, close friends, user settings, and permission management.
 
