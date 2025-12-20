@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",  # For token blacklisting on logout
     "corsheaders",  # For handling CORS - required for React frontend
-    "api",
+    "users",
+    "core",
+    "rbac",
     "easyaudit",
 ]
 
@@ -197,7 +199,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-AUTH_USER_MODEL = "api.User"
+AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -205,19 +207,36 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
-        "api.permissions.DynamicPagePermission",
+        "core.permissions.DynamicPagePermission",
     ],
     # Disable CSRF for API endpoints (we use JWT)
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
     ],
+    "DEFAULT_PAGINATION_CLASS": "core.pagination.DefaultPagination",
+    "DeFAULT_THROTTLE_CLASSES": (
+        "core.throttling.AnonBurstRateThrottle",
+        "core.throttling.AnonSustainedRateThrottle",
+        "core.throttling.UserBurstRateThrottle",
+        "core.throttling.UserSustainedRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon_burst": "20/min",
+        "anon_sustained": "100/hour",
+        "user_burst": "60/min",
+        "user_sustained": "1000/day",
+    },
 }
 
 # JWT Token Settings
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=config("ACCESS_TOKEN_LIFETIME", default=15, cast=int)
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=config("REFRESH_TOKEN_LIFETIME", default=7, cast=int)
+    ),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "ALGORITHM": "HS256",
