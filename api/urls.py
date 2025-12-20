@@ -1,7 +1,7 @@
 from django.urls import path
 
-from api.views import (
-    AssignUserPermissionView,
+from rbac.views import AssignUserPermissionView
+from users.views import (
     BlockUserView,
     CloseFriendView,
     DeleteAccountView,
