@@ -1,6 +1,10 @@
+<<<<<<< Updated upstream
 # Instagram Clone
+=======
+# Instagram Clone - User Microservice
+>>>>>>> Stashed changes
 
-A Django REST Framework microservice that handles all user-related functionalities similar to Instagram, including authentication, profiles, followers/following, blocking/muting, close friends, user settings, and permission management.
+A **Django REST Framework microservice** that handles all **user-related functionalities** similar to Instagram, including authentication, profiles, followers/following, blocking/muting, close friends, user settings, and role-based access control (RBAC). This microservice is built to be **scalable, modular, and microservice-ready**.
 
 ---
 
@@ -23,12 +27,12 @@ A Django REST Framework microservice that handles all user-related functionaliti
 - **List Following** (`FollowingView`)
 - **Follow/Unfollow Actions** (`FollowActionView`)
 - **Follow Requests** (`FollowRequestRespondView`)
-- Supports search and pagination.
+- Supports **search** and **pagination**.
 
 ### 4. Blocking & Muting
 - **Block Users** (`BlockedUser` / `BlockUserView`)
 - **Mute Users** (`MutedUser` / `MuteUserView`)
-- Granular mute options: posts and stories.
+- Granular mute options: **posts and stories**.
 
 ### 5. Close Friends
 - **Manage Close Friends** (`CloseFriend` / `CloseFriendView`)
@@ -79,11 +83,61 @@ A Django REST Framework microservice that handles all user-related functionaliti
 
 ---
 
-## Pagination
-- All list endpoints (followers/following) use `DefaultPagination`.
+## Pagination & Search
+- All **list endpoints** (followers/following) use **`DefaultPagination`**.
 - Search query supported via `?search=<term>`.
 
 ---
+
+## Notes
+- All non-public endpoints require authentication.
+- Privacy and visibility are enforced at the view-level using **DynamicPagePermission**.
+- RBAC allows admins to enable/disable features per URL without code changes.
+- Blocking and muting are supported at a granular level for posts and stories.
+
+---
+
+## Folder Structure
+
+```text
+Instagram-Clone/                      # Django project root
+│
+├── backend/
+│   ├── __init__.py
+│   ├── settings.py           # Global settings (JWT, DRF, throttling, caching)
+│   ├── urls.py               # Project-level URLs (admin + api)
+│   ├── asgi.py
+│   └── wsgi.py
+│
+├── api/                      # API gateway layer
+│   ├── urls.py               # Routes all app endpoints
+│   └── __init__.py
+│
+├── users/                    # User domain microservice
+│   ├── models.py             # User, Profile, Follow, Block, Mute, Settings
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── tests/
+│   └── __init__.py
+│
+├── rbac/                     # Role-Based Access Control
+│   ├── models.py             # Role, PagePermission, UserPermission
+│   ├── serializers.py
+│   ├── permissions.py        # DynamicPagePermission
+│   ├── views.py
+│   ├── urls.py
+│   └── __init__.py
+│
+├── core/                     # Shared reusable components
+│   ├── models.py             # TimeStampedModel
+│   ├── pagination.py         # DefaultPagination
+│   ├── throttling.py         # Custom throttle classes
+│   └── __init__.py
+│
+├── manage.py
+└── requirements.txt
+
 
 ## Notes
 - All non-public endpoints require authentication.
