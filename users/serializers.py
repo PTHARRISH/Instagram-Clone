@@ -6,6 +6,7 @@ from rest_framework.serializers import ModelSerializer
 from users.models import (
     BlockedUser,
     CloseFriend,
+    FollowList,
     MutedUser,
     Profile,
     User,
@@ -115,8 +116,8 @@ class LoginSerializer(serializers.Serializer):
 
 
 class ProfileSerializer(ModelSerializer):
-    # followers_count = serializers.SerializerMethodField()
-    # following_count = serializers.SerializerMethodField()
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -127,8 +128,8 @@ class ProfileSerializer(ModelSerializer):
             "gender",
             "website",
             "is_private",
-            # "followers_count",
-            # "following_count",
+            "followers_count",
+            "following_count",
         ]
         extra_kwargs = {
             "user": {"read_only": True},
@@ -150,11 +151,11 @@ class ProfileSerializer(ModelSerializer):
                 raise serializers.ValidationError("Enter a valid URL for the website.")
         return attrs
 
-    # def get_followers_count(self, obj):
-    #     return FollowList.objects.filter(following=obj.user).count()
+    def get_followers_count(self, obj):
+        return FollowList.objects.filter(following=obj.user).count()
 
-    # def get_following_count(self, obj):
-    #     return FollowList.objects.filter(follower=obj.user).count()
+    def get_following_count(self, obj):
+        return FollowList.objects.filter(follower=obj.user).count()
 
 
 class UserPublicSerializer(serializers.ModelSerializer):
