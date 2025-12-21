@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",  # For token blacklisting on logout
     "corsheaders",  # For handling CORS - required for React frontend
-    "users",
+    "users.apps.UsersConfig",
     "core",
     "rbac",
     "easyaudit",
@@ -207,12 +207,12 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
-        "core.permissions.DynamicPagePermission",
+        "rbac.permissions.DynamicPagePermission",
     ],
     # Disable CSRF for API endpoints (we use JWT)
-    "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
-    ],
+    # "DEFAULT_RENDERER_CLASSES": [
+    #     "rest_framework.renderers.JSONRenderer",
+    # ],
     "DEFAULT_PAGINATION_CLASS": "core.pagination.DefaultPagination",
     "DeFAULT_THROTTLE_CLASSES": (
         "core.throttling.AnonBurstRateThrottle",
