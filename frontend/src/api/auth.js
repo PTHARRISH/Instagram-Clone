@@ -1,4 +1,4 @@
-import api, { setTokens, clearTokens, getRefreshToken } from './client';
+import api, { clearTokens, getRefreshToken, setTokens } from './client';
 import { API_ENDPOINTS } from './config';
 
 /**
@@ -54,16 +54,19 @@ export const login = async (identifier, password) => {
 export const logout = async () => {
   try {
     const refreshToken = getRefreshToken();
-    
+    let message = 'Logout successful';
+
     if (refreshToken) {
-      await api.post(API_ENDPOINTS.AUTH.LOGOUT, { refresh: refreshToken });
+      const response = await api.post(API_ENDPOINTS.AUTH.LOGOUT, { refresh: refreshToken }, { skipAuth: true });
+      message = response.data?.message || message;
     }
-    
+
     clearTokens();
-    return { message: 'Logout successful' };
+    return { message };
   } catch (error) {
     clearTokens();
-    throw error;
+    // Return a proper error message so frontend can show it
+    throw new Error(error.response?.data?.error || 'Logout failed. Please login again.');
   }
 };
 

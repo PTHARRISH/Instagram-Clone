@@ -36,7 +36,7 @@ export const isAuthenticated = () => {
 export const isTokenExpired = () => {
   const token = getAccessToken();
   if (!token) return true;
-  
+
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     const exp = payload.exp * 1000;
@@ -50,7 +50,7 @@ export const isTokenExpired = () => {
 
 export const refreshAccessToken = async () => {
   const refreshToken = getRefreshToken();
-  
+
   if (!refreshToken) {
     clearTokens();
     throw new Error('No refresh token available');
@@ -63,7 +63,7 @@ export const refreshAccessToken = async () => {
     );
 
     const { access } = response.data;
-    
+
     if (!access) {
       throw new Error('No access token in refresh response');
     }
@@ -96,11 +96,11 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = getAccessToken();
-    
+
     if (token && !config.skipAuth) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     return config;
   },
   (error) => {
@@ -118,14 +118,14 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    
+
     if (originalRequest.skipAuth) {
       return Promise.reject(error);
     }
-    
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       try {
         const newAccessToken = await refreshAccessToken();
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -136,7 +136,7 @@ api.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
