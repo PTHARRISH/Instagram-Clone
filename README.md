@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
 # Instagram Clone
-=======
-# Instagram Clone - User Microservice
->>>>>>> Stashed changes
 
 A **Django REST Framework microservice** that handles all **user-related functionalities** similar to Instagram, including authentication, profiles, followers/following, blocking/muting, close friends, user settings, and role-based access control (RBAC). This microservice is built to be **scalable, modular, and microservice-ready**.
 
