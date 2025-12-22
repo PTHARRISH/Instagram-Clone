@@ -390,9 +390,8 @@ class UserSettingsView(APIView):
 
 # ======================== Logout View ========================
 class LogoutView(APIView):
-    throttle_classes = [
-        UserSustainedRateThrottle,
-    ]
+    throttle_classes = [UserSustainedRateThrottle]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         try:
@@ -403,7 +402,6 @@ class LogoutView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Create RefreshToken object and blacklist it
             token = RefreshToken(refresh_token)
             token.blacklist()
 
